@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quote Generator</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      margin: 0;
+      padding: 40px 20px;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+    }
+
+    h1 {
+      margin-bottom: 30px;
+    }
+
+    .quote-box {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    #quote {
+      font-size: 24px;
+      line-height: 1.5;
+      margin-bottom: 15px;
+    }
+
+    #author {
+      font-size: 18px;
+      color: #555;
+      margin-bottom: 25px;
+    }
+
+    button {
+      padding: 10px 16px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .new-btn {
+      background: #333;
+      color: white;
+    }
+
+    .favorite-btn {
+      background: #e63946;
+      color: white;
+    }
+
+    .copy-btn {
+      background: #457b9d;
+      color: white;
+    }
+
+    .history {
+      margin-top: 40px;
+      text-align: left;
+    }
+
+    .history h2 {
+      text-align: center;
+    }
+
+    .favorite-item {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container">
+
+    <h1>✨ Quote Generator</h1>
+
+    <div class="quote-box">
+
+      <div id="quote">
+        Click "New Quote" to get a quote.
+      </div>
+
+      <div id="author"></div>
+
+      <button class="new-btn" onclick="getQuote()">
+        New Quote
+      </button>
+
+      <button class="favorite-btn" onclick="favoriteQuote()">
+        ❤️ Favorite
+      </button>
+
+      <button class="copy-btn" onclick="copyQuote()">
+        📋 Copy
+      </button>
+
+    </div>
+
+    <div class="history">
+      <h2>❤️ Favorites History</h2>
+
+      <div id="favorites">
+        No favorite quotes yet.
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let currentQuote = "";
+    let currentAuthor = "";
+
+    async function getQuote() {
+  try {
+    const response = await fetch("/api/quote");
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch quote");
+    }
+
+    const data = await response.json();
+
+    currentQuote = data.quote;
+    currentAuthor = data.author;
+
+    document.getElementById("quote").textContent =
+      `"${currentQuote}"`;
+
+    document.getElementById("author").textContent =
+      `— ${currentAuthor}`;
+
+  } catch (error) {
+    console.error(error);
+    alert("Unable to get a quote. Please try again.");
+  }
+}
+
+    async function favoriteQuote() {
+  if (!currentQuote || !currentAuthor) {
+    alert("Please get a quote first!");
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/favorites", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        quote: currentQuote,
+        author: currentAuthor
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to save favorite");
+    }
+
+    alert("❤️ Quote added to favorites!");
+    loadFavorites();
+
+  } catch (error) {
+    console.error(error);
+    alert("Unable to save favorite. Please try again.");
+  }
+}
+// Load favorite quotes
+async function loadFavorites() {
+  try {
+    const response = await fetch("/api/favorites");
+
+    if (!response.ok) {
+      throw new Error("Unable to fetch favorites");
+    }
+
+    const favorites = await response.json();
+    const favoritesDiv = document.getElementById("favorites");
+
+    favoritesDiv.innerHTML = "";
+
+    if (favorites.length === 0) {
+      favoritesDiv.textContent = "No favorite quotes yet.";
+      return;
+    }
+
+    favorites.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "favorite-item";
+
+      const quote = document.createElement("p");
+      quote.textContent = `"${item.quote}"`;
+
+      const author = document.createElement("p");
+      author.textContent = `— ${item.author}`;
+
+      const deleteButton = document.createElement("button");
+      deleteButton.textContent = "Delete";
+      deleteButton.onclick = () => deleteFavorite(item.id);
+
+      div.appendChild(quote);
+      div.appendChild(author);
+      div.appendChild(deleteButton);
+
+      favoritesDiv.appendChild(div);
+    });
+
+  } catch (error) {
+    console.error("Unable to load favorites:", error);
+  }
+}
+async function deleteFavorite(id) {
+  try {
+    const response = await fetch(`/api/favorites/${id}`, {
+      method: "DELETE"
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to delete favorite");
+    }
+
+    alert("Favorite quote deleted!");
+    loadFavorites();
+
+  } catch (error) {
+    console.error(error);
+    alert("Unable to delete favorite. Please try again.");
+  }
+}
+    function copyQuote() {
+      if (!currentQuote) {
+        alert("Please get a quote first.");
+        return;
+      }
+
+      navigator.clipboard.writeText(
+        `"${currentQuote}" - ${currentAuthor}`
+      );
+
+      alert("Quote copied!");
+    }
+    loadFavorites();
+  </script>
+
+</body>
+</html>
