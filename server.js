@@ -76,7 +76,12 @@ app.get("/api/quote", async (req, res) => {
       Math.random() * fallbackQuotes.length
     );
 
-    res.json(fallbackQuotes[randomIndex]);
+    const fallback = fallbackQuotes[randomIndex];
+
+    res.json({
+    quote: fallback.text,
+    author: fallback.author
+});
   }
 });
 // Save favorite quote
