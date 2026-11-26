@@ -48,8 +48,7 @@ app.get("/", (req, res) => {
 app.get("/api/quote", async (req, res) => {
   try {
     const response = await fetch(
-    "https://quotely.lol/api/v1/random"
-
+      "https://quotely.lol/api/v1/random"
     );
 
     if (!response.ok) {
@@ -79,9 +78,9 @@ app.get("/api/quote", async (req, res) => {
     const fallback = fallbackQuotes[randomIndex];
 
     res.json({
-    quote: fallback.text,
-    author: fallback.author
-});
+      quote: fallback.text,
+      author: fallback.author
+    });
   }
 });
 // Save favorite quote
